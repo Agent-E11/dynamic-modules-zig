@@ -1,8 +1,8 @@
 {
     "module_dir_path": "./modules/",
     "modules": [
-        "first.zig",
-        "third.zig",
-        "another.zig"
+        "copy.zig",
+        "append.zig",
+        "no-op.zig"
     ]
 }

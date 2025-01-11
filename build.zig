@@ -5,20 +5,12 @@ const print = std.debug.print;
 // declaratively construct a build graph that will be executed by an external
 // runner.
 pub fn build(b: *std.Build) void {
+    // NOTE: I think this is a _little_ bit hacky, because it is not a run step
+    // depended on by other steps. It might be fine though.
     const wrapper_path = createWrapperFromConfigFile(b, "./modules.json") catch |err| {
         print("{}\n", .{err});
         std.process.exit(1);
     };
-
-    // const tool = b.addExecutable(.{
-    //     .name = "generate_module_wrapper",
-    //     .root_source_file = b.path("./tools/generate_module_wrapper.zig"),
-    //     .target = b.host,
-    // });
-    //
-    // const tool_step = b.addRunArtifact(tool);
-    // const wrapper = tool_step.addOutputFileArg("wrapper.zig");
-    // tool_step.addDirectoryArg(b.path("./modules/"));
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -158,11 +150,22 @@ fn createWrapperFromConfigFile(b: *std.Build, conf_path: []const u8) !std.Build.
 
     const wrapper_path = ".generated/wrapper.zig";
 
+    // FIXME: Currently, the wrapper file is pretty bloated. I think this
+    // generated file should ideally be only the `mod_types` declaration,
+    // and should only be used internally. Then, an actual zig file (with type
+    // checking instead of programming using these strings) could wrap that,
+    // define `Mod`, and create the `modules` array while verifing the structure
+    // of the modules.
     const wrapper_file = try cwd.createFile(wrapper_path, .{});
 
     _ = try wrapper_file.write(
+        \\const std = @import("std");
+        \\
         \\pub const Mod = struct {
-        \\    doThing: *const fn() void,
+        \\    name: []const u8,
+        \\    init: *const fn(allocator: std.mem.Allocator, context_ptr: *?*anyopaque) anyerror!void,
+        \\    display: *const fn(allocator: std.mem.Allocator, context: ?*anyopaque) anyerror![]const u8,
+        \\    process: *const fn(allocator: std.mem.Allocator, context: ?*anyopaque, input: []const u8) anyerror!void,
         \\};
         \\
         \\const mod_types = [_]type{
@@ -178,12 +181,19 @@ fn createWrapperFromConfigFile(b: *std.Build, conf_path: []const u8) !std.Build.
     }
     _ = try wrapper_file.write("};\n\n");
 
+    // TODO: Currently, if the imported `mod` does not have the correct
+    // declarations, there is an ugly compile error. I might be able to do a
+    // comp-time loop that checks the declarations of the module and outputs
+    // a custom @compileError().
     _ = try wrapper_file.write(
         \\pub const modules = blk: {
         \\    var mods: [mod_types.len]Mod = undefined;
         \\    for (mod_types, 0..) |mod, i| {
         \\        mods[i] = Mod{
-        \\            .doThing = &mod.doThing,
+        \\            .name = mod.name,
+        \\            .init = &mod.init,
+        \\            .display = &mod.display,
+        \\            .process = &mod.process,
         \\        };
         \\    }
         \\    break :blk mods;
