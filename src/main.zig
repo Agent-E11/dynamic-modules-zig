@@ -2,8 +2,8 @@ const std = @import("std");
 const print = std.debug.print;
 const eql = std.mem.eql;
 
-const Mod = @import("wrapper").Mod;
-const modules = @import("wrapper").modules;
+const Mod = @import("modules").Mod;
+const modules = @import("modules").modules;
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
