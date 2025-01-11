@@ -2,6 +2,7 @@
     "module_dir_path": "./modules/",
     "modules": [
         "copy.zig",
+        "self-contained.zig",
         "append.zig",
         "no-op.zig"
     ]

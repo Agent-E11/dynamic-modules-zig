@@ -13,7 +13,7 @@ pub fn main() !void {
     // passed to them. Making the modules handle their own state may break that
     // because the state might have to be a top-level `var` declaration (I can't
     // think of how it could be done any other way at the moment).
-    var contexts = [_]?*anyopaque{null} ** modules.len;
+    var contexts = [_]?*anyopaque{null} ** modules.len; // FIXME: 99% sure the pointers don't need to be optional
     for (modules, 0..) |mod, i| {
         // TODO: If the modules handle their own contexts, then they could still
         // be passed this allocator, and they can add it to their state.
@@ -47,7 +47,9 @@ pub fn main() !void {
                 print("invalid command: '{s}'\n", .{cmd});
             }
         } else {
-            try mod.process(allocator, context, input);
+            mod.process(allocator, context, input) catch |err| {
+                print("error: {s}\n", .{@errorName(err)});
+            };
         }
     }
     print("exiting\n", .{});
