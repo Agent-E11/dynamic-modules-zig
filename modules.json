@@ -3,6 +3,7 @@
     "modules": [
         "copy.zig",
         "self-contained.zig",
+        "self-contained-append.zig",
         "append.zig",
         "no-op.zig"
     ]

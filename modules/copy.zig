@@ -9,32 +9,16 @@ const State = struct {
     msg: []const u8,
 };
 
-pub fn init(allocator: std.mem.Allocator, context_ptr: *?*anyopaque) anyerror!void { // NOTE: The error type cannot be inferred, because wrapper.Mod expects an anyerror set
-    if (context_ptr.* == null) {
-        context_ptr.* = try allocator.create(State);
-        const state: *State = @ptrCast(@alignCast(context_ptr.*));
+var state: State = undefined;
 
-        state.* = State{
-            .msg = "",
-        };
-    }
+pub fn init(_: std.mem.Allocator, _: *?*anyopaque) anyerror!void { // NOTE: The error type cannot be inferred, because wrapper.Mod expects an anyerror set
+    state = State{ .msg = "" };
 }
 
-pub fn display(allocator: std.mem.Allocator, context: ?*anyopaque) anyerror![]const u8 {
-    _ = allocator;
-
-    const state: *State = @ptrCast(@alignCast(
-        context orelse return error.NullContext,
-    ));
-
+pub fn display(_: std.mem.Allocator, _: ?*anyopaque) anyerror![]const u8 {
     return state.msg;
 }
 
-pub fn process(allocator: std.mem.Allocator, context: ?*anyopaque, input: []const u8) anyerror!void {
-    _ = allocator;
-    const state: *State = @ptrCast(@alignCast(
-        context orelse return error.NullContext,
-    ));
-
-    state.*.msg = input;
+pub fn process(_: std.mem.Allocator, _: ?*anyopaque, input: []const u8) anyerror!void {
+    state.msg = input;
 }
